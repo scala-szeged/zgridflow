@@ -17,7 +17,9 @@ pipeline {
         script {
           env.SOURCE_SHA = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
           env.IMAGE_TAG = env.SOURCE_SHA.take(12)
-          env.SKIP_BUILD = sh(script: 'git log -1 --pretty=%s', returnStdout: true).contains('[skip ci]') ? 'true' : 'false'
+          def fromPolling = !currentBuild.getBuildCauses('hudson.triggers.SCMTrigger$SCMTriggerCause').isEmpty()
+          def imageUpdate = sh(script: 'git log -1 --pretty=%s', returnStdout: true).contains('[skip ci]')
+          env.SKIP_BUILD = fromPolling && imageUpdate ? 'true' : 'false'
         }
       }
     }
@@ -34,6 +36,8 @@ pipeline {
               kubectl --context kind-zgridflow -n argocd annotate application poc-local argocd.argoproj.io/refresh=hard --overwrite
               kubectl --context kind-zgridflow -n argocd wait application/poc-local --for="jsonpath={.status.sync.revision}=$(git rev-parse HEAD)" --timeout=180s
               kubectl --context kind-zgridflow -n argocd wait application/poc-local --for=jsonpath='{.status.health.status}'=Healthy --timeout=300s
+              kubectl --context kind-zgridflow -n zgridflow-local rollout status deployment/api --timeout=180s
+              kubectl --context kind-zgridflow -n zgridflow-local rollout status deployment/gateway --timeout=180s
               ./scripts/poc-smoke-test.sh
             '''
           }

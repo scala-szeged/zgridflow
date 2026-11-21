@@ -155,7 +155,7 @@ Click **Build Now** once to start the first build and register SCM polling. Subs
 3. Commit the image references to `apps/local/poc-values.yaml` and push to `main` using the Mac user's `gh` login.
 4. Argo CD applies the Git change. Jenkins waits for the matching revision and healthy services, then runs the end-to-end smoke test.
 
-The generated image-reference commit contains `[skip ci]` and is excluded from SCM polling to prevent a build loop. Concurrent builds are disabled. If `main` advances while a build is running, publishing fails rather than overwriting newer desired state; rebuild the new revision. Jenkins refreshes and observes Argo CD but does not apply the application Deployments directly.
+The generated image-reference commit contains `[skip ci]` and is excluded from SCM polling to prevent a build loop. Manual **Build Now** requests still rebuild it, which is useful after recreating kind. Concurrent builds are disabled. If `main` advances while a build is running, publishing fails rather than overwriting newer desired state; rebuild the new revision. Jenkins refreshes and observes Argo CD but does not apply the application Deployments directly.
 
 Only run trusted code through this local job: it executes as your Mac user with access to Docker, kubeconfig, and GitHub credentials. This POC has one local executor and no isolated build agent. GitHub remains the remote source of truth, so fetching and publishing still require connectivity.
 
