@@ -1,0 +1,57 @@
+{{- $repo := required "repoURL must point to the Git repository containing this bundle" .Values.repoURL -}}
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: zgridflow
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  description: ZGridFlow environment workloads
+  sourceRepos:
+    - {{ $repo | quote }}
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: {{ printf "zgridflow-%s" .Values.environment | quote }}
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: ""
+      kind: Service
+    - group: ""
+      kind: PersistentVolumeClaim
+    - group: apps
+      kind: StatefulSet
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ printf "dynamodb-%s" .Values.environment }}
+  namespace: argocd
+spec:
+  project: zgridflow
+  source:
+    repoURL: {{ $repo | quote }}
+    targetRevision: {{ .Values.revision | quote }}
+    path: charts/dynamodb-local
+    helm:
+      valueFiles:
+        - {{ printf "../../apps/%s/values.yaml" .Values.environment | quote }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ printf "zgridflow-%s" .Values.environment | quote }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
