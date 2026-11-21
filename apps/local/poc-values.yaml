@@ -1,10 +1,10 @@
 {
   "api": {
     "image": "zgridflow-api",
-    "tag": "cfc0a255be5d"
+    "tag": "7ea83980ce1a"
   },
   "gateway": {
     "image": "zgridflow-gateway",
-    "tag": "cfc0a255be5d"
+    "tag": "7ea83980ce1a"
   }
 }
