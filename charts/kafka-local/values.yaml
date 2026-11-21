@@ -1,0 +1,25 @@
+image:
+  repository: apache/kafka
+  tag: "4.4.0"
+  pullPolicy: IfNotPresent
+# Keep this ID unchanged for the lifetime of the persistent volume.
+clusterId: "ABEiM0RVZneImaq7zN3u_w"
+storage:
+  size: 2Gi
+  storageClassName: ""
+external:
+  enabled: false
+  host: localhost
+  port: 9094
+heapOpts: "-Xms256m -Xmx512m"
+retention:
+  hours: 24
+  bytesPerPartition: 1073741824
+  segmentBytes: 134217728
+resources:
+  requests:
+    cpu: 250m
+    memory: 768Mi
+  limits:
+    cpu: "2"
+    memory: 1536Mi

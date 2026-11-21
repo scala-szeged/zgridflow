@@ -1,0 +1,19 @@
+# Single broker/controller for local development; no replication or failover.
+image:
+  repository: apache/kafka
+  tag: "4.4.0"
+storage:
+  size: 2Gi
+  storageClassName: standard
+external:
+  enabled: true
+  host: localhost
+  port: 9094
+heapOpts: "-Xms256m -Xmx512m"
+resources:
+  requests:
+    cpu: 250m
+    memory: 768Mi
+  limits:
+    cpu: "2"
+    memory: 1536Mi

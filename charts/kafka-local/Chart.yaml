@@ -1,0 +1,6 @@
+apiVersion: v2
+name: kafka-local
+description: Single persistent Apache Kafka KRaft broker/controller for local development
+type: application
+version: 0.1.0
+appVersion: "4.4.0"

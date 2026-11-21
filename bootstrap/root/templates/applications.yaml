@@ -55,3 +55,39 @@ spec:
         duration: 5s
         factor: 2
         maxDuration: 3m
+{{ if .Values.kafka.enabled }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ printf "kafka-%s" .Values.environment }}
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: zgridflow
+  source:
+    repoURL: {{ $repo | quote }}
+    targetRevision: {{ .Values.revision | quote }}
+    path: charts/kafka-local
+    helm:
+      valueFiles:
+        - {{ printf "../../apps/%s/kafka-values.yaml" .Values.environment | quote }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ printf "zgridflow-%s" .Values.environment | quote }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+{{ end }}
