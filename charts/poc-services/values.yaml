@@ -1,0 +1,18 @@
+api:
+  image: zgridflow-api
+  tag: bootstrap
+  resources:
+    requests: {cpu: 100m, memory: 256Mi}
+    limits: {cpu: "1", memory: 512Mi}
+gateway:
+  image: zgridflow-gateway
+  tag: bootstrap
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: "1", memory: 256Mi}
+dynamodb:
+  endpoint: http://dynamodb-local:8000
+  table: zgridflow-messages
+kafka:
+  brokers: kafka-local:9092
+  topic: zgridflow.message-created

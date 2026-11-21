@@ -23,6 +23,8 @@ spec:
       kind: PersistentVolumeClaim
     - group: apps
       kind: StatefulSet
+    - group: apps
+      kind: Deployment
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -84,6 +86,41 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+{{ end }}
+{{ if .Values.poc.enabled }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ printf "poc-%s" .Values.environment }}
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: zgridflow
+  source:
+    repoURL: {{ $repo | quote }}
+    targetRevision: {{ .Values.revision | quote }}
+    path: charts/poc-services
+    helm:
+      valueFiles:
+        - {{ printf "../../apps/%s/poc-values.yaml" .Values.environment | quote }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ printf "zgridflow-%s" .Values.environment | quote }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
     retry:
       limit: 5
       backoff:

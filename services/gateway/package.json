@@ -1,0 +1,22 @@
+{
+  "name": "@zgridflow/gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --import tsx --test src/*.test.ts",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "graphql": "17.1.0",
+    "graphql-yoga": "6.1.0",
+    "kafkajs": "2.2.4",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "tsx": "4.20.6",
+    "typescript": "7.0.2"
+  }
+}

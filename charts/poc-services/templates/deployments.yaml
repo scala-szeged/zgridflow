@@ -1,0 +1,76 @@
+{{- range $name, $port := dict "api" 8080 "gateway" 4000 }}
+{{- $config := index $.Values $name }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+spec:
+  replicas: 1
+  {{- if eq $name "api" }}
+  # This tiny outbox relay intentionally has one owner; no distributed leases.
+  strategy:
+    type: Recreate
+  {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $name }}
+      app.kubernetes.io/instance: {{ $.Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ $name }}
+        app.kubernetes.io/instance: {{ $.Release.Name }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ ternary 10001 1000 (eq $name "api") }}
+        runAsGroup: {{ ternary 10001 1000 (eq $name "api") }}
+      containers:
+        - name: {{ $name }}
+          image: {{ printf "%s:%s" $config.image $config.tag | quote }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: {{ $port }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          env:
+            - name: PORT
+              value: {{ $port | quote }}
+            - name: KAFKA_BROKERS
+              value: {{ $.Values.kafka.brokers | quote }}
+            - name: KAFKA_TOPIC
+              value: {{ $.Values.kafka.topic | quote }}
+            {{- if eq $name "api" }}
+            - name: DYNAMODB_ENDPOINT
+              value: {{ $.Values.dynamodb.endpoint | quote }}
+            - name: DYNAMODB_TABLE
+              value: {{ $.Values.dynamodb.table | quote }}
+            {{- else }}
+            - name: API_URL
+              value: http://api:8080
+            {{- end }}
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 90
+          readinessProbe:
+            httpGet:
+              path: {{ ternary "/ready" "/health" (eq $name "gateway") }}
+              port: http
+            timeoutSeconds: 6
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+          resources:
+            {{- toYaml $config.resources | nindent 12 }}
+{{- end }}

@@ -3,3 +3,5 @@ revision: main
 environment: local
 kafka:
   enabled: true
+poc:
+  enabled: true

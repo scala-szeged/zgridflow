@@ -1,0 +1,7 @@
+# Updated by local Jenkins after images have been loaded into kind.
+api:
+  image: zgridflow-api
+  tag: bootstrap
+gateway:
+  image: zgridflow-gateway
+  tag: bootstrap

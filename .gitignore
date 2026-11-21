@@ -3,3 +3,8 @@
 .DS_Store
 
 .env.local
+**/target/
+**/node_modules/
+**/dist/
+.bsp/
+.metals/

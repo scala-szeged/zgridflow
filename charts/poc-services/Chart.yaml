@@ -1,0 +1,5 @@
+apiVersion: v2
+name: poc-services
+description: Minimal Scala ZIO API and TypeScript GraphQL gateway
+type: application
+version: 0.1.0
