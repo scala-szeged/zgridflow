@@ -1,11 +1,11 @@
 {
   "api": {
     "image": "zgridflow-api",
-    "tag": "f4a8297905ac"
+    "tag": "4279c834189f"
   },
   "gateway": {
     "image": "zgridflow-gateway",
-    "tag": "f4a8297905ac"
+    "tag": "4279c834189f"
   },
   "kafka": {
     "topic": "zgridflow.message-created.avro.v1"
