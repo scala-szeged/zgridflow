@@ -1,0 +1,8 @@
+.git
+.local
+.idea
+.env*
+**/node_modules
+**/target
+**/dist
+doc

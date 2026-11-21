@@ -15,4 +15,4 @@ dynamodb:
   table: zgridflow-messages
 kafka:
   brokers: kafka-local:9092
-  topic: zgridflow.message-created
+  topic: zgridflow.message-created.avro.v1

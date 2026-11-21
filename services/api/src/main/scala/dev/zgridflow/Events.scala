@@ -1,7 +1,6 @@
 package dev.zgridflow
 
 import zio.*
-import zio.json.*
 import org.apache.kafka.clients.admin.{AdminClient, NewTopic}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.errors.TopicExistsException
@@ -9,9 +8,11 @@ import java.util.Properties
 import java.util.concurrent.ExecutionException
 import scala.jdk.CollectionConverters.*
 
-final class Events(producer: KafkaProducer[String, String], topic: String):
+final class Events(producer: KafkaProducer[String, Array[Byte]], topic: String):
   def publish(message: PocMessage): Task[Unit] = ZIO.attemptBlocking {
-    producer.send(new ProducerRecord(topic, message.id, MessageCreated("MessageCreated", message).toJson)).get()
+    val record = new ProducerRecord[String, Array[Byte]](topic, message.id, AvroEvent.encode(message))
+    AvroEvent.headers.iterator().asScala.foreach(header => record.headers().add(header))
+    producer.send(record).get()
     ()
   }
 
@@ -27,7 +28,7 @@ object Events:
     val props = new Properties()
     props.setProperty("bootstrap.servers", brokers)
     props.setProperty("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-    props.setProperty("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+    props.setProperty("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer")
     props.setProperty("acks", "all")
     props.setProperty("enable.idempotence", "true")
     props.setProperty("delivery.timeout.ms", "15000")

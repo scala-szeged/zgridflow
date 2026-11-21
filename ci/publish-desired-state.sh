@@ -14,7 +14,8 @@ import json, sys
 # JSON is valid YAML, and avoids adding a YAML parser dependency to the host.
 with open('apps/local/poc-values.yaml', 'w') as f:
     json.dump({'api': {'image': 'zgridflow-api', 'tag': sys.argv[1]},
-               'gateway': {'image': 'zgridflow-gateway', 'tag': sys.argv[1]}}, f, indent=2)
+               'gateway': {'image': 'zgridflow-gateway', 'tag': sys.argv[1]},
+               'kafka': {'topic': 'zgridflow.message-created.avro.v1'}}, f, indent=2)
     f.write('\n')
 PY
 git add apps/local/poc-values.yaml

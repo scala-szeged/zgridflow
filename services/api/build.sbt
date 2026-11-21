@@ -5,6 +5,7 @@ ThisBuild / organization := "dev.zgridflow"
 lazy val root = (project in file("."))
   .settings(
     name := "zgridflow-api",
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".." / ".." / "contracts",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio" % "2.1.27",
       "dev.zio" %% "zio-http" % "3.11.6",
@@ -12,6 +13,7 @@ lazy val root = (project in file("."))
       "software.amazon.awssdk" % "dynamodb" % "2.59.7",
       "software.amazon.awssdk" % "url-connection-client" % "2.59.7",
       "org.apache.kafka" % "kafka-clients" % "4.4.0",
+      "org.apache.avro" % "avro" % "1.12.2",
       "org.slf4j" % "slf4j-simple" % "2.0.17",
       "dev.zio" %% "zio-test" % "2.1.27" % Test,
       "dev.zio" %% "zio-test-sbt" % "2.1.27" % Test

@@ -1,0 +1,21 @@
+{
+  "type": "record",
+  "name": "MessageCreated",
+  "namespace": "dev.zgridflow.events.v1",
+  "doc": "Immutable v1 Kafka event contract. Timestamps use RFC 3339 UTC strings.",
+  "fields": [
+    { "name": "kind", "type": "string", "default": "MessageCreated" },
+    {
+      "name": "message",
+      "type": {
+        "type": "record",
+        "name": "Message",
+        "fields": [
+          { "name": "id", "type": "string" },
+          { "name": "text", "type": "string" },
+          { "name": "createdAt", "type": "string" }
+        ]
+      }
+    }
+  ]
+}

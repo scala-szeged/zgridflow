@@ -6,5 +6,8 @@
   "gateway": {
     "image": "zgridflow-gateway",
     "tag": "7ea83980ce1a"
+  },
+  "kafka": {
+    "topic": "zgridflow.message-created"
   }
 }

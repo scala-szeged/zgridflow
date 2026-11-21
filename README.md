@@ -10,6 +10,7 @@ Local Kubernetes on kind, with Argo CD continuously reconciling DynamoDB Local, 
 - `charts/kafka-local/`: single persistent Kafka 4.4.0 broker/controller using KRaft.
 - `services/api/`: Scala 3 + ZIO domain, DynamoDB persistence, and Kafka event relay.
 - `services/gateway/`: TypeScript GraphQL queries, mutation validation, and Kafka-backed SSE subscriptions.
+- `contracts/avro/`: shared, versioned Avro event schemas and a cross-language binary fixture.
 - `charts/poc-services/` and `apps/local/poc-values.yaml`: application deployments and local image versions.
 - `Jenkinsfile`, `ci/`, and `bootstrap/jenkins/`: local build, GitOps publishing, and Jenkins setup.
 
@@ -93,8 +94,8 @@ The intentionally small domain is a message with `id`, `text`, and `createdAt`. 
 
 1. GraphQL `createMessage(text)` validates and trims 1–200 characters.
 2. The Scala API validates again and writes the message with `published=false` in one DynamoDB item.
-3. A ZIO background fiber sends a `MessageCreated` event to Kafka, then marks the item published. Failed deliveries are retried from DynamoDB.
-4. The gateway consumes Kafka and forwards the message to active GraphQL subscriptions.
+3. A ZIO background fiber encodes a `MessageCreated` event as Avro binary, sends it to Kafka, then marks the item published. Failed deliveries are retried from DynamoDB.
+4. The gateway decodes the Avro event, validates it, and forwards the message to active GraphQL subscriptions.
 5. GraphQL `messages` queries the API's DynamoDB repository, returning the newest 100 messages.
 
 This tiny outbox uses table scans and one API replica. Delivery is at least once: a crash after publishing but before marking the item can duplicate an event. The gateway suppresses recently seen message IDs in memory. Subscriptions deliver live events and do not replay missed events after a disconnected browser reconnects; use the query to recover current data. This is a local, unauthenticated POC, not a production service. The gateway uses one Kafka consumer group per pod to fan out to that pod's subscribers.
@@ -168,3 +169,29 @@ To reproduce CI validation manually:
 ```
 
 References: [ZIO HTTP server](https://zio.dev/zio-http/reference/server), [GraphQL Yoga subscriptions](https://the-guild.dev/graphql/yoga-server/docs/features/subscriptions), [Jenkins pipelines](https://www.jenkins.io/doc/book/pipeline/getting-started/).
+
+## Avro Kafka contract
+
+`contracts/avro/message-created-v1.avsc` is the shared source of truth for the Scala producer and TypeScript gateway. The API packages it as a classpath resource; the gateway image includes the same file. Apache Avro 1.12.2 writes the event and `avsc` 5.7.9 reads it. REST, GraphQL, and DynamoDB payloads continue to use JSON.
+
+The topic is **`zgridflow.message-created.avro.v1`**. Each Kafka record uses the message UUID as its string key and raw Avro binary as its value. Three UTF-8 headers identify the encoding and exact writer schema:
+
+- `content-type`: `application/avro`
+- `avro-schema`: `dev.zgridflow.events.v1.MessageCreated`
+- `avro-schema-sha256`: SHA-256 of the exact shared `.avsc` file bytes, with LF line endings.
+
+This is raw Avro binary with Kafka headers, not Avro Object Container Files, Avro single-object framing, or Confluent's schema-ID framing. No schema registry is installed. Both services ship the one supported writer schema, and the gateway rejects unknown/missing schema headers, truncated data, trailing bytes, and invalid domain values. Invalid records are logged and skipped in this POC; a production service should have an explicit quarantine/dead-letter policy.
+
+Keep the published v1 schema immutable. Add a new schema version and coordinate readers/writers for future changes. A schema registry and enforced compatibility checks become useful when real services need independent releases and multiple schema versions.
+
+The original `zgridflow.message-created` JSON topic is preserved. Jenkins publishes the new topic configuration together with the Avro-capable image references, avoiding a configuration-only switch while old images are still deployed. Existing messages remain queryable in DynamoDB; previously delivered events are not replayed into the Avro topic. Any pending outbox items are encoded with Avro on their next delivery attempt.
+
+The shared fixture under `contracts/avro/fixtures/` includes a Unicode message, expected wire bytes, and schema hash. Scala and TypeScript tests both verify that fixture. `./ci/validate.sh` runs these contract tests; `./scripts/poc-smoke-test.sh` verifies the actual Scala → Avro/Kafka → TypeScript → GraphQL subscription path after deployment.
+
+If building the gateway image manually, use the repository root as Docker's build context so the shared schema is available:
+
+```bash
+docker build -f services/gateway/Dockerfile -t zgridflow-gateway:dev .
+```
+
+Reference: [Apache Avro specification](https://avro.apache.org/docs/1.12.0/specification/).

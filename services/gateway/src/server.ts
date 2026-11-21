@@ -4,9 +4,10 @@ import { Kafka, logLevel } from 'kafkajs';
 import { GraphQLError } from 'graphql';
 import { z } from 'zod';
 import { createGateway, messageSchema, eventSchema } from './schema.js';
+import { decodeEvent } from './avro.js';
 
 const api = process.env.API_URL ?? 'http://localhost:8080';
-const topic = process.env.KAFKA_TOPIC ?? 'zgridflow.message-created';
+const topic = process.env.KAFKA_TOPIC ?? 'zgridflow.message-created.avro.v1';
 const port = Number(process.env.PORT ?? 4000);
 const kafka = new Kafka({
   clientId: 'zgridflow-gateway',
@@ -61,9 +62,8 @@ async function startConsumer() {
   await consumer.subscribe({ topic, fromBeginning: false });
   const seen = new Set<string>();
   await consumer.run({ eachMessage: async ({ message }) => {
-    const raw = message.value?.toString();
     let parsed: z.infer<typeof eventSchema>;
-    try { parsed = eventSchema.parse(JSON.parse(raw ?? 'null')); }
+    try { parsed = decodeEvent(message.value, message.headers); }
     catch (error) { console.error('Skipping invalid event', error); return; }
     if (seen.has(parsed.message.id)) return;
     seen.add(parsed.message.id);

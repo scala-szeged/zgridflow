@@ -19,7 +19,7 @@ try {
   });
   assert.equal(stream.status, 200);
   assert.match(stream.headers.get('content-type'), /text\/event-stream/);
-  const text = `POC smoke ${Date.now()}`;
+  const text = `POC Avro smoke ${Date.now()} — Szeged 👋`;
   const mutation = await graphql('mutation($text: String!) { createMessage(text: $text) { id text createdAt } }', { text });
   assert.equal(mutation.errors, undefined);
   const saved = mutation.data.createMessage;

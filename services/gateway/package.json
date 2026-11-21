@@ -9,6 +9,7 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
+    "avsc": "5.7.9",
     "graphql": "17.1.0",
     "graphql-yoga": "6.1.0",
     "kafkajs": "2.2.4",

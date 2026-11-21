@@ -44,11 +44,11 @@ object Main extends ZIOAppDefault:
         .build()))(client => ZIO.attempt(client.close()).orDie)
       store = new Persistence(client, env("DYNAMODB_TABLE", "zgridflow-messages"))
       brokers = env("KAFKA_BROKERS", "localhost:9094")
-      topic = env("KAFKA_TOPIC", "zgridflow.message-created")
+      topic = env("KAFKA_TOPIC", "zgridflow.message-created.avro.v1")
       _ <- (store.initialize *> Events.initialize(brokers, topic))
         .tapError(error => ZIO.logWarning(s"Infrastructure initialization will retry: ${error.toString}"))
         .retry(Schedule.spaced(2.seconds) && Schedule.recurs(30))
-      producer <- ZIO.acquireRelease(ZIO.attempt(new KafkaProducer[String, String](Events.properties(brokers))))(
+      producer <- ZIO.acquireRelease(ZIO.attempt(new KafkaProducer[String, Array[Byte]](Events.properties(brokers))))(
         producer => ZIO.attempt(producer.close(java.time.Duration.ofSeconds(5))).orDie)
       _ <- new Events(producer, topic).relay(store).forkScoped
       _ <- ZIO.logInfo("POC API ready; DynamoDB and Kafka initialized")
